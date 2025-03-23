@@ -10,8 +10,12 @@ class XianyuReplyBot:
         # 初始化OpenAI客户端
         self.client = OpenAI(
             api_key=os.getenv("OPENAI_API_KEY"),
-            base_url="https://dashscope.aliyuncs.com/compatible-mode/v1"
+            base_url=os.getenv("OPENAI_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1")
         )
+        # 从环境变量获取模型名称
+        self.model_name = os.getenv("DEFAULT_MODEL", "qwen-max")
+        logger.info(f"使用模型: {self.model_name}")
+        
         self._init_system_prompts()
         self._init_agents()
         self.router = IntentRouter(self.agents['classify'])
@@ -196,6 +200,8 @@ class BaseAgent:
         self.client = client
         self.system_prompt = system_prompt
         self.safety_filter = safety_filter
+        # 从环境变量获取模型名称
+        self.model_name = os.getenv("DEFAULT_MODEL", "qwen-max")
 
     def generate(self, user_msg: str, item_desc: str, context: str, bargain_count: int = 0) -> str:
         """生成回复模板方法"""
@@ -213,7 +219,7 @@ class BaseAgent:
     def _call_llm(self, messages: List[Dict], temperature: float = 0.4) -> str:
         """调用大模型"""
         response = self.client.chat.completions.create(
-            model="qwen-max",
+            model=self.model_name,
             messages=messages,
             temperature=temperature,
             max_tokens=500,
@@ -232,7 +238,7 @@ class PriceAgent(BaseAgent):
         messages[0]['content'] += f"\n▲当前议价轮次：{bargain_count}"
 
         response = self.client.chat.completions.create(
-            model="qwen-max",
+            model=self.model_name,
             messages=messages,
             temperature=dynamic_temp,
             max_tokens=500,
@@ -253,7 +259,7 @@ class TechAgent(BaseAgent):
         # messages[0]['content'] += "\n▲知识库：\n" + self._fetch_tech_specs()
 
         response = self.client.chat.completions.create(
-            model="qwen-max",
+            model=self.model_name,
             messages=messages,
             temperature=0.4,
             max_tokens=500,

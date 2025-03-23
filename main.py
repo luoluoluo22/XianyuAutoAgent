@@ -19,7 +19,20 @@ class XianyuLive:
         self.xianyu = XianyuApis()
         self.base_url = 'wss://wss-goofish.dingtalk.com/'
         self.cookies_str = cookies_str
+        
+        # 添加错误处理
+        if not cookies_str or cookies_str == "your_cookies_here":
+            logger.error("未设置有效的cookies，请在.env文件中设置正确的COOKIES_STR")
+            logger.info("示例: COOKIES_STR=cna=xxx; t=xxx; unb=12345; ...")
+            raise ValueError("Cookies未正确配置")
+            
         self.cookies = trans_cookies(cookies_str)
+        
+        # 检查必要的cookie键
+        if 'unb' not in self.cookies:
+            logger.error("Cookie中缺少'unb'字段，请确保COOKIES_STR包含完整的闲鱼登录信息")
+            raise ValueError("Cookie中缺少必要字段'unb'")
+            
         self.myid = self.cookies['unb']
         self.device_id = generate_device_id(self.myid)
         self.context_manager = ChatContextManager()
